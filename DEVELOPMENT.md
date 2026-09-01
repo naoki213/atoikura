@@ -178,3 +178,42 @@ xcodebuild -scheme Atoikura -destination 'platform=iOS Simulator,name=iPhone 15'
   年度に依存しないプロフィール・予備資金はそのまま維持する。年度切り替え時に
   読み込み直したフィールドの変更検知で自動保存が再度走る（同じ値を書き戻すだけの
   冗長な保存が発生するが、データ破損リスクは無いため許容している）。
+- Phase10（進行中）: `project.yml`の`PRODUCT_NAME`を「あといくら」に設定していたのを
+  削除した。`PRODUCT_NAME`はSwiftのモジュール名（`PRODUCT_MODULE_NAME`、デフォルトは
+  `$(PRODUCT_NAME:c99extidentifier)`）にも影響し、日本語文字列を指定すると
+  `@testable import Atoikura`（テストコード側でモジュール名を`Atoikura`決め打ちしている）
+  が壊れるリスクがあったため。ホーム画面に表示される日本語のアプリ名は、代わりに
+  Info.plistの`CFBundleDisplayName`（既に「あといくら」を設定済み）だけで十分。
+
+## Ver1.0 完成条件チェックリスト（現状）
+
+ユーザーが定義した完成条件に対する現状。**「実機/シミュレータで確認」欄がNoの項目は、
+Xcode/Swiftツールチェーンの無い環境で実装されたため未検証。macOSでXcodeを使える環境に
+引き継いだら、最初に必ずこれらを確認すること。**
+
+| 項目 | 実装状況 | 実機/シミュレータで確認 |
+|---|---|---|
+| オンボーディング→ホーム到達 | 実装済み | No |
+| 売上・経費の登録 | 実装済み | No |
+| ホームへの反映（売上・経費・利益） | 実装済み（`@Query`により自動更新） | No |
+| 予想税金等の表示 | 実装済み（TaxEngine連携） | No |
+| 「今年あと使えるお金」の更新 | 実装済み | No |
+| 再起動後もデータが残る | 実装済み（`isStoredInMemoryOnly: false`） | No |
+| データの編集・削除 | 実装済み | No |
+| 税計算のユニットテスト | テストコードは実装済み（境界値中心） | **No（`swift test`未実行）** |
+| 主要画面でクラッシュしない | 強制アンラップ排除・防御的な初期値で設計 | No |
+| ダークモード対応 | セマンティックカラーのみ使用（確認済み、grepで検証） | No |
+| Dynamic Type対応 | ホーム画面の巨大数字は`@ScaledMetric`で対応 | No |
+| 小型iPhoneでのレイアウト | ScrollView/Form中心の可変レイアウトで設計 | No |
+
+**次にXcodeが使える人/エージェントがやるべきこと（優先順）:**
+1. `cd TaxEngine && swift test` でTaxEngineの境界値テストを実行し、全て green にする。
+2. `xcodegen generate` して `Atoikura.xcodeproj` を開き、`⌘B` でビルドが通ることを確認する
+   （型エラー・API誤用がないか、この時点で初めて機械的に検証できる）。
+3. `⌘U` でAtoikuraTestsも含めて全テストを実行する。
+4. iPhone SE（小型）とiPhone Pro Max（大型）のシミュレータでオンボーディング→
+   売上/経費登録→ホーム確認までの一連の操作を手動で行う。
+5. ダークモード・Dynamic Type（設定 > アクセシビリティ > さらに大きな文字）を
+   オンにして崩れがないか確認する。
+6. 実際のAppIcon画像（1024×1024のPNG）を`Atoikura/Resources/Assets.xcassets/AppIcon.appiconset`
+   に追加する。

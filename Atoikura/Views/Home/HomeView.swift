@@ -14,6 +14,9 @@ struct HomeView: View {
     @State private var isPresentingIncomeEntry = false
     @State private var isPresentingExpenseEntry = false
 
+    /// Dynamic Typeの設定に応じてスケールする、大きな金額表示用のフォントサイズ。
+    @ScaledMetric(relativeTo: .largeTitle) private var heroFontSize: CGFloat = 46
+
     private var year: Int {
         appSettingsList.first?.selectedYear ?? Calendar.current.component(.year, from: .now)
     }
@@ -91,7 +94,7 @@ struct HomeView: View {
                 .foregroundStyle(.secondary)
 
             Text(CurrencyFormatter.string(from: viewModel.breakdown.remainingAllowance))
-                .font(.system(size: 46, weight: .bold, design: .rounded))
+                .font(.system(size: heroFontSize, weight: .bold, design: .rounded))
                 .foregroundStyle(viewModel.breakdown.remainingAllowance >= 0 ? Color.primary : Color.red)
                 .minimumScaleFactor(0.5)
                 .lineLimit(1)

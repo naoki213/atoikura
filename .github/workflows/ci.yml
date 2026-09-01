@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - 'claude/**'
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  taxengine-tests:
+    name: TaxEngine unit tests (swift test)
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: swift test
+        working-directory: TaxEngine
+        run: swift test
+
+  build-and-test-app:
+    name: Build & test the iOS app (XcodeGen + xcodebuild)
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Determine simulator destination
+        id: sim
+        run: |
+          DEVICE=$(xcrun simctl list devices available -j \
+            | jq -r '.devices | to_entries[] | select(.key | contains("iOS")) | .value[] | select(.name | contains("iPhone")) | .name' \
+            | tail -n 1)
+          echo "Selected simulator: $DEVICE"
+          echo "device=$DEVICE" >> "$GITHUB_OUTPUT"
+
+      - name: Build (Debug, iOS Simulator)
+        run: |
+          xcodebuild build \
+            -project Atoikura.xcodeproj \
+            -scheme Atoikura \
+            -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.device }}" \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Run AtoikuraTests
+        run: |
+          xcodebuild test \
+            -project Atoikura.xcodeproj \
+            -scheme Atoikura \
+            -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.device }}" \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Boot simulator, install app, capture screenshots
+        if: always()
+        run: |
+          DEVICE="${{ steps.sim.outputs.device }}"
+          UDID=$(xcrun simctl list devices available -j \
+            | jq -r --arg NAME "$DEVICE" '.devices | to_entries[] | .value[] | select(.name == $NAME) | .udid' \
+            | head -n 1)
+          echo "Using simulator UDID: $UDID"
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+
+          APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "Atoikura.app" -path "*Debug-iphonesimulator*" | head -n 1)
+          echo "App bundle: $APP_PATH"
+
+          mkdir -p screenshots
+          if [ -n "$APP_PATH" ]; then
+            xcrun simctl install "$UDID" "$APP_PATH"
+            xcrun simctl launch "$UDID" com.atoikura.app
+            sleep 6
+            xcrun simctl io "$UDID" screenshot screenshots/01_launch.png
+          else
+            echo "App bundle not found; skipping screenshot."
+          fi
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-screenshots
+          path: screenshots/*.png
+          if-no-files-found: ignore

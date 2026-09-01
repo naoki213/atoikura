@@ -22,6 +22,8 @@ jobs:
   build-and-test-app:
     name: Build & test the iOS app (XcodeGen + xcodebuild)
     runs-on: macos-15
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -90,3 +92,31 @@ jobs:
           name: app-screenshots
           path: screenshots/*.png
           if-no-files-found: ignore
+
+      # actions/upload-artifact のZIPは外部ストレージ(Azure Blob)に置かれ、
+      # 開発エージェント側のネットワークポリシーからは直接ダウンロードできないため、
+      # 別途スクリーンショットをリポジトリの専用ブランチへ直接コミットする。
+      # これによりGitHub API経由でスクリーンショットの中身を取得できるようにする。
+      - name: Commit screenshots to ci-screenshots branch
+        if: always()
+        run: |
+          if [ -d screenshots ] && [ -n "$(ls -A screenshots 2>/dev/null)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git fetch origin ci-screenshots || true
+            if git show-ref --verify --quiet refs/remotes/origin/ci-screenshots; then
+              git checkout -B ci-screenshots origin/ci-screenshots
+            else
+              git checkout --orphan ci-screenshots
+              git rm -rf . > /dev/null 2>&1 || true
+            fi
+            mkdir -p latest
+            cp screenshots/*.png latest/
+            echo "source_run_id=${{ github.run_id }}" > latest/README.txt
+            echo "source_sha=${{ github.sha }}" >> latest/README.txt
+            git add latest
+            git commit -m "chore: update CI screenshots [skip ci]" || echo "No changes to commit"
+            git push origin ci-screenshots --force
+          else
+            echo "No screenshots directory to commit."
+          fi

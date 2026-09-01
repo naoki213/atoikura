@@ -20,6 +20,7 @@ enum HistoryGrouping {
 
         let formatter = DateFormatter()
         formatter.locale = locale
+        formatter.timeZone = calendar.timeZone
         formatter.dateFormat = "yyyy年M月"
 
         return grouped.keys

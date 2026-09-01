@@ -20,8 +20,10 @@ struct OnboardingForecastStepView: View {
                 CurrencyTextField(value: $viewModel.annualExpenseForecast)
             }
 
-            Section("事業用に残しておきたい予備資金") {
+            Section {
                 CurrencyTextField(value: $viewModel.businessReserveAmount)
+            } header: {
+                Text("事業用に残しておきたい予備資金")
             } footer: {
                 Text("急な出費や税金の支払いに備えて確保しておきたい金額の目安です。あとから変更できます。")
             }

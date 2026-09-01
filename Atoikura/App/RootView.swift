@@ -3,21 +3,18 @@ import SwiftData
 
 /// アプリのルート。オンボーディング未完了ならオンボーディングを、完了済みならメインタブを表示する。
 ///
-/// オンボーディングの実画面はPhase2で実装するため、現時点では暫定のプレースホルダーを表示する。
+/// メインタブ（ホーム/履歴/予測/設定）の実画面はPhase3以降で実装するため、
+/// 現時点では暫定のプレースホルダーを表示する。
 struct RootView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var appSettingsList: [AppSettings]
 
     var body: some View {
         Group {
-            if let appSettings = appSettingsList.first {
-                if appSettings.hasCompletedOnboarding {
-                    MainTabPlaceholderView()
-                } else {
-                    OnboardingPlaceholderView()
-                }
+            if let appSettings = appSettingsList.first, appSettings.hasCompletedOnboarding {
+                MainTabPlaceholderView()
             } else {
-                OnboardingPlaceholderView()
+                OnboardingContainerView()
             }
         }
         .onAppear(perform: ensureAppSettingsExists)
@@ -29,26 +26,26 @@ struct RootView: View {
     }
 }
 
-/// Phase2でオンボーディング画面に置き換える暫定表示。
-private struct OnboardingPlaceholderView: View {
-    var body: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "yensign.circle")
-                .font(.system(size: 48))
-                .foregroundStyle(.blue)
-            Text("あといくら")
-                .font(.title.bold())
-            Text("オンボーディングは準備中です")
-                .foregroundStyle(.secondary)
-        }
-    }
-}
-
 /// Phase7以降でホームタブなどに置き換える暫定表示。
 private struct MainTabPlaceholderView: View {
+    @Query private var userProfiles: [UserProfile]
+
     var body: some View {
-        Text("メイン画面は準備中です")
-            .foregroundStyle(.secondary)
+        VStack(spacing: 12) {
+            Image(systemName: "checkmark.circle")
+                .font(.system(size: 40))
+                .foregroundStyle(.blue)
+            Text("設定が保存されました")
+                .font(.title3.bold())
+            if let name = userProfiles.first?.displayName, !name.isEmpty {
+                Text("ようこそ、\(name)さん")
+                    .foregroundStyle(.secondary)
+            }
+            Text("メインタブ（ホーム/履歴/予測/設定）は準備中です")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding()
     }
 }
 

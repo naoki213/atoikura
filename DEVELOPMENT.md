@@ -118,7 +118,15 @@ xcodebuild -scheme Atoikura -destination 'platform=iOS Simulator,name=iPhone 15'
 
 ## Phase進行ログ
 
-- Phase1（進行中）: XcodeGenの`project.yml`、SwiftDataモデル6種、`TaxEngine`パッケージの
+- Phase1: XcodeGenの`project.yml`、SwiftDataモデル6種、`TaxEngine`パッケージの
   基礎型（`FilingType` / `BlueReturnDeductionType` / `BusinessTaxCategory`）を作成。
   アプリのエントリーポイントと最小限のRootView（オンボーディング/メイン切り替えの
   プレースホルダー）を作成。
+- Phase2: オンボーディング4画面（表示名・事業開始年 / 申告方法 / 年間見込み・予備資金 /
+  完了）と`OnboardingViewModel`を実装し、`RootView`から接続した。「あとで設定する」は
+  どのステップからでも呼べて、未入力項目は安全な初期値のまま保存する。
+  `SingletonFetcher`で`UserProfile`/`ReserveSettings`/`AppSettings`をfetch-or-createし、
+  RootViewが先に作成した空の`AppSettings`と重複しないようにしている点に注意
+  （`OnboardingViewModelTests`で重複が起きないことを確認済み）。
+  免責文言は`DisclaimerText`として共通化し、オンボーディング完了画面と将来の設定画面で
+  共有する。メインタブ側はまだプレースホルダーのまま（Phase7で本実装）。

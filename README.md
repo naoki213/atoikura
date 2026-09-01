@@ -95,6 +95,8 @@ TaxEngine（Swift Package、Apple UIフレームワーク非依存）
 ## 現在実装済み機能
 
 - プロジェクト基盤（XcodeGen構成、SwiftDataモデル、TaxEngineパッケージの型定義）
+- オンボーディング（表示名・事業開始年 / 申告方法 / 年間見込み・予備資金 / 完了、
+  「あとで設定する」対応）
 
 （他の機能はPhase進行に応じて追記する）
 

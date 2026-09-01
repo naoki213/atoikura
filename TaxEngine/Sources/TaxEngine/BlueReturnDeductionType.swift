@@ -4,7 +4,7 @@ import Foundation
 ///
 /// 白色申告の場合は常に `.notEligible`（控除なし）。
 /// 実際の控除額は ``TaxRuleSet/blueReturnDeductionAmount(for:)`` が年度ごとのルールに基づいて返す。
-public enum BlueReturnDeductionType: String, Codable, CaseIterable, Sendable {
+public enum BlueReturnDeductionType: String, Codable, CaseIterable, Hashable, Sendable {
     /// 対象外（白色申告、または要件を満たさない場合）。控除額 0円。
     case notEligible
 

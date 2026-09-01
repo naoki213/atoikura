@@ -130,3 +130,15 @@ xcodebuild -scheme Atoikura -destination 'platform=iOS Simulator,name=iPhone 15'
   （`OnboardingViewModelTests`で重複が起きないことを確認済み）。
   免責文言は`DisclaimerText`として共通化し、オンボーディング完了画面と将来の設定画面で
   共有する。メインタブ側はまだプレースホルダーのまま（Phase7で本実装）。
+- Phase3: 4タブの`MainTabView`（ホーム/履歴/予測/設定、履歴以外はまだプレースホルダー）を
+  作成し、`RootView`から接続。売上・経費の追加/編集画面（`IncomeEntryView` /
+  `ExpenseEntryView`、金額と日付を最優先表示し「詳細を追加」で展開）、履歴一覧
+  （`HistoryView`、すべて/売上/経費セグメント、月別グループ、スワイプ削除＋確認ダイアログ、
+  タップで編集）を実装。`IncomeTransaction`に売上の分類用フィールド`category`
+  （自由記述、経費と違い定型カテゴリー一覧は設けない）を追加。
+  月別グルーピングは`HistoryGrouping`という純粋関数に切り出してユニットテスト済み。
+  **重要な修正**: `String`のrawValueを持つenum（`FilingType` /
+  `BlueReturnDeductionType` / `BusinessTaxCategory` / `ExpenseCategory` /
+  `HistorySegment`）はSwift標準では明示的に`Hashable`を宣言しないと自動適合されない
+  （raw valueがあっても暗黙にHashableにはならない）。Picker/`ForEach(id: \.self)`で
+  使うため、これらすべてに`Hashable`を明示的に追加した。

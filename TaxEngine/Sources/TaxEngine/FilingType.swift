@@ -1,7 +1,7 @@
 import Foundation
 
 /// 確定申告の方式。
-public enum FilingType: String, Codable, CaseIterable, Sendable {
+public enum FilingType: String, Codable, CaseIterable, Hashable, Sendable {
     case blue
     case white
 

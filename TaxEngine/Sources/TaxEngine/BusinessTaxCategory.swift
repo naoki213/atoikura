@@ -6,7 +6,7 @@ import Foundation
 /// Ver1.0では個人事業主・フリーランスに多い区分に単純化して提供する。
 /// 正確な業種区分の判定が必要な場合は税務署・都道府県税事務所へ確認するよう
 /// UI上で案内すること。
-public enum BusinessTaxCategory: String, Codable, CaseIterable, Sendable {
+public enum BusinessTaxCategory: String, Codable, CaseIterable, Hashable, Sendable {
     /// 非課税業種（著述業など、個人事業税がかからない業種）。
     case exempt
 

@@ -1,7 +1,7 @@
 import Foundation
 
 /// 経費のカテゴリー。税計算には使用せず、履歴の分類・表示のみに使う。
-enum ExpenseCategory: String, Codable, CaseIterable, Identifiable, Sendable {
+enum ExpenseCategory: String, Codable, CaseIterable, Identifiable, Hashable, Sendable {
     case purchases          // 仕入
     case supplies           // 消耗品
     case communication       // 通信費

@@ -11,6 +11,14 @@ final class TaxSettings {
     @Attribute(.unique) var year: Int
 
     var blueReturnDeduction: BlueReturnDeductionType
+
+    /// 都道府県。Ver1.0の税計算では直接使用しないが、Ver2以降の国民健康保険の
+    /// 地域別概算などに備えて保持しておく（設定画面のみで使用）。
+    var prefecture: Prefecture
+
+    /// 生年。年齢を用いた控除区分の判定はVer1.0では行わない簡略化のための参考情報。
+    var birthYear: Int?
+
     var dependentsCount: Int
     var hasSpouse: Bool
 
@@ -30,6 +38,8 @@ final class TaxSettings {
     init(
         year: Int,
         blueReturnDeduction: BlueReturnDeductionType = .notEligible,
+        prefecture: Prefecture = .unspecified,
+        birthYear: Int? = nil,
         dependentsCount: Int = 0,
         hasSpouse: Bool = false,
         isNationalPensionEnrolled: Bool = true,
@@ -41,6 +51,8 @@ final class TaxSettings {
     ) {
         self.year = year
         self.blueReturnDeduction = blueReturnDeduction
+        self.prefecture = prefecture
+        self.birthYear = birthYear
         self.dependentsCount = dependentsCount
         self.hasSpouse = hasSpouse
         self.isNationalPensionEnrolled = isNationalPensionEnrolled

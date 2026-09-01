@@ -162,3 +162,19 @@ xcodebuild -scheme Atoikura -destination 'platform=iOS Simulator,name=iPhone 15'
   `IncomeTransaction.isPaid`（入金済み/未入金）は履歴画面の表示にのみ使い、
   金額計算には反映していない。実際の入出金（現金残高）ベースの資金繰り管理は
   Ver2以降の拡張候補とし、`isPaid`フィールドはそのための布石として残してある。
+- Phase7-9: ホーム画面（`HomeView` / `HomeViewModel`）を「今年あと使えるお金」中心の
+  実装に置き換え、「内訳を見る」の開閉、売上/経費/予想利益/税金社会保険/確保資金の表示、
+  未入力時の案内文を実装。予測タブ（`ForecastView`）で自動予測（実績ベースの単純年間
+  換算）と手動設定を切り替え可能にし、`TaxSettings.manualRevenueForecast` /
+  `manualExpenseForecast` に即時保存する。設定タブ（`SettingsView` /
+  `SettingsViewModel`）でプロフィール・対象年度・申告方法・青色申告特別控除・
+  都道府県・生年・扶養・配偶者・社会保険・個人事業税の業種区分・予備資金を管理できる
+  ようにした。都道府県用に`Prefecture`（47都道府県+未設定）を追加。
+  `TaxSettings`に`prefecture`・`birthYear`を追加（Ver1.0の税計算では未使用、
+  Ver2以降の拡張・参考情報として保持）。
+
+  **設計判断: 対象年度の切り替え** — 設定画面で対象年度を変更すると、その年度の
+  `TaxSettings`（無ければ初期値）を読み込み直す（`SettingsViewModel.selectYear`）。
+  年度に依存しないプロフィール・予備資金はそのまま維持する。年度切り替え時に
+  読み込み直したフィールドの変更検知で自動保存が再度走る（同じ値を書き戻すだけの
+  冗長な保存が発生するが、データ破損リスクは無いため許容している）。

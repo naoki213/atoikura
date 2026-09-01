@@ -13,7 +13,9 @@ struct ForecastView: View {
     @State private var manualRevenueAmount: Decimal?
     @State private var isExpenseManual = false
     @State private var manualExpenseAmount: Decimal?
-    @State private var hasLoadedInitialValues = false
+    /// 直近に読み込んだ年度。`year`（対象年度）と食い違ったら、その年度のTaxSettings内容へ
+    /// 読み込み直す（設定タブで対象年度を変更してこの画面に戻ってきた場合に対応するため）。
+    @State private var loadedYear: Int?
     @State private var errorMessage: String?
 
     private var year: Int {
@@ -83,7 +85,8 @@ struct ForecastView: View {
                 }
             }
             .navigationTitle("予測")
-            .onAppear(perform: loadInitialValuesIfNeeded)
+            .onAppear(perform: loadValuesIfYearChanged)
+            .onChange(of: year) { _, _ in loadValuesIfYearChanged() }
             .onChange(of: isRevenueManual) { _, _ in save() }
             .onChange(of: manualRevenueAmount) { _, _ in save() }
             .onChange(of: isExpenseManual) { _, _ in save() }
@@ -112,17 +115,17 @@ struct ForecastView: View {
         }
     }
 
-    private func loadInitialValuesIfNeeded() {
-        guard !hasLoadedInitialValues else { return }
+    private func loadValuesIfYearChanged() {
+        guard loadedYear != year else { return }
         manualRevenueAmount = currentTaxSettings?.manualRevenueForecast
         manualExpenseAmount = currentTaxSettings?.manualExpenseForecast
         isRevenueManual = manualRevenueAmount != nil
         isExpenseManual = manualExpenseAmount != nil
-        hasLoadedInitialValues = true
+        loadedYear = year
     }
 
     private func save() {
-        guard hasLoadedInitialValues else { return }
+        guard loadedYear == year else { return }
         let targetYear = year
         do {
             let existing = try modelContext.fetch(

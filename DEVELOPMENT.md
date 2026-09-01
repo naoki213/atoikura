@@ -217,3 +217,21 @@ Xcode/Swiftツールチェーンの無い環境で実装されたため未検証
    オンにして崩れがないか確認する。
 6. 実際のAppIcon画像（1024×1024のPNG）を`Atoikura/Resources/Assets.xcassets/AppIcon.appiconset`
    に追加する。
+
+## 静的レビューで見つかった不具合の修正記録
+
+ビルドできない環境での実装が続いたため、別のエージェントに読み取り専用の静的レビューを
+依頼した（型・import・SwiftData/SwiftUI API・境界値ロジックを中心に39ファイルを確認）。
+
+見つかった不具合: `ForecastView`は初回表示時に一度だけ`TaxSettings`の手動予測値を
+`@State`へ読み込み、以後は読み込み直さない設計だった（`hasLoadedInitialValues`フラグで
+ガード）。そのため、設定タブで対象年度を変更してから予測タブに戻ると、画面上の
+「手動で設定する」トグルや金額が**古い年度の値のまま**残ってしまい、そこでユーザーが
+何か操作すると、古い年度の手動予測値が新しい年度の`TaxSettings`に誤って書き込まれる
+可能性があった。
+
+対応: `hasLoadedInitialValues: Bool` を `loadedYear: Int?` に変更し、`year`
+（対象年度、`AppSettings.selectedYear`由来）と食い違ったら読み込み直すように修正
+（`loadValuesIfYearChanged()`、`.onChange(of: year)`を追加）。`save()`も
+`loadedYear == year` の場合のみ書き込むようにし、読み込み直し中の書き込みを防いでいる。
+他の指摘事項は無かった（型エラー・import漏れ・force unwrap・SwiftData API誤用など）。

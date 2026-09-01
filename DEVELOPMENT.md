@@ -142,3 +142,23 @@ xcodebuild -scheme Atoikura -destination 'platform=iOS Simulator,name=iPhone 15'
   `HistorySegment`）はSwift標準では明示的に`Hashable`を宣言しないと自動適合されない
   （raw valueがあっても暗黙にHashableにはならない）。Picker/`ForEach(id: \.self)`で
   使うため、これらすべてに`Hashable`を明示的に追加した。
+- Phase4-6: `TaxEngine`本体（`TaxProfile` / `TaxRuleSet` / `TaxRules2026` /
+  `IncomeTaxCalculator` / `ResidentTaxCalculator` / `NationalPensionCalculator` /
+  `NationalHealthInsuranceCalculator` / `BusinessTaxCalculator` /
+  `TaxCalculationResult` / `TaxEngine`ファサード）を実装し、境界値中心のユニット
+  テスト（課税所得0円・1円・税率区分の境界前後、基礎控除の全区分境界、青色申告控除、
+  個人事業税の事業主控除境界など）を追加。端数処理（課税所得1,000円未満切り捨て・
+  税額100円未満切り捨て）は`TaxRounding`に集約した。
+  アプリ側には年間集計（`AnnualSummaryService`）・年間予測（`AnnualForecastService`、
+  自動予測と手動設定値を明確に区別）・「今年あと使えるお金」の組み立て
+  （`AllowanceCalculator`）をServicesとして追加。
+
+  **設計判断: キャッシュフローと利益をどこまで分離したか** — 要求定義では
+  「売上・入金・経費・支払・利益・税金予測・社会保険予測・確保資金・利用可能資金を
+  別々に管理する」ことが理想として挙げられていたが、要求定義自身が
+  「Ver1.0で複雑になりすぎる場合は『今年の予想手残り』という内部概念を使ってよい」
+  と明示的に許容していたため、Ver1.0では**年間の予想利益をベースにした単一の
+  『今年あと使えるお金』**に絞った（`AllowanceCalculator`参照）。
+  `IncomeTransaction.isPaid`（入金済み/未入金）は履歴画面の表示にのみ使い、
+  金額計算には反映していない。実際の入出金（現金残高）ベースの資金繰り管理は
+  Ver2以降の拡張候補とし、`isPaid`フィールドはそのための布石として残してある。

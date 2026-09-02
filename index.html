@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>あといくら - 個人事業主の税金・手取り予測</title>
+    <meta
+      name="description"
+      content="個人事業主・フリーランス向け。売上・経費・税金・社会保険を踏まえて「今年あといくら使えるか」を概算します。データは端末内にのみ保存されます。"
+    />
+
+    <meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+
+    <!-- ホーム画面に追加したときにアプリのように開く -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="あといくら" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="assets/icons/icon-180.png" />
+    <link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml" />
+
+    <link rel="stylesheet" href="assets/css/style.css" />
+
+    <!-- 依存の順に読み込む。defer なので記述順に実行される。 -->
+    <script defer src="assets/js/format.js"></script>
+    <script defer src="assets/js/store.js"></script>
+    <script defer src="assets/js/tax/rules-2026.js"></script>
+    <script defer src="assets/js/tax/engine.js"></script>
+    <script defer src="assets/js/services.js"></script>
+    <script defer src="assets/js/views/components.js"></script>
+    <script defer src="assets/js/views/onboarding.js"></script>
+    <script defer src="assets/js/views/home.js"></script>
+    <script defer src="assets/js/views/history.js"></script>
+    <script defer src="assets/js/views/entry.js"></script>
+    <script defer src="assets/js/views/forecast.js"></script>
+    <script defer src="assets/js/views/settings.js"></script>
+    <script defer src="assets/js/app.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>
+      <div style="padding: 24px; font-family: sans-serif">
+        <h1>あといくら</h1>
+        <p>
+          このアプリはJavaScriptで計算しています。ブラウザの設定でJavaScriptを有効にしてください。
+        </p>
+      </div>
+    </noscript>
+  </body>
+</html>

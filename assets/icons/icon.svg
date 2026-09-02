@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="あといくら">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2f7bb0" />
+      <stop offset="1" stop-color="#22557c" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)" />
+  <text
+    x="256"
+    y="300"
+    text-anchor="middle"
+    font-family="-apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif"
+    font-size="220"
+    font-weight="700"
+    fill="#ffffff"
+  >¥</text>
+  <text
+    x="256"
+    y="392"
+    text-anchor="middle"
+    font-family="-apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif"
+    font-size="72"
+    font-weight="600"
+    fill="rgba(255,255,255,0.82)"
+  >あといくら</text>
+</svg>

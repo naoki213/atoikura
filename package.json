@@ -1,0 +1,14 @@
+{
+  "name": "atoikura",
+  "version": "1.0.0",
+  "private": true,
+  "description": "あといくら - 個人事業主・フリーランス向けに「今年あといくら使えるか」を概算するWebアプリ",
+  "scripts": {
+    "test": "node tools/run-tests.cjs",
+    "check": "node tools/screenshots.cjs",
+    "icons": "node tools/make-icons.cjs"
+  },
+  "devDependencies": {
+    "playwright": "1.56.1"
+  }
+}

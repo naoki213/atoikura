@@ -1,0 +1,42 @@
+name: Web
+
+# Webアプリ（GitHub Pagesで公開しているもの）の検証。
+# 実行が速く安価な ubuntu ランナーで、毎回のpushで動かす。
+
+on:
+  push:
+    branches:
+      - main
+      - 'claude/**'
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    name: ユニットテストとブラウザ操作確認
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: 税計算・集計のユニットテスト
+        run: node tools/run-tests.cjs
+
+      - name: Playwright（Chromium）を用意
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
+      - name: ブラウザで実際に操作して確認・スクリーンショット撮影
+        run: node tools/screenshots.cjs screenshots
+
+      - name: スクリーンショットを保存
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-screenshots
+          path: screenshots/*.png
+          if-no-files-found: ignore

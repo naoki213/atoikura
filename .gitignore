@@ -15,3 +15,8 @@ Generated-Info.plist
 ## Editor
 .vscode/
 .idea/
+
+## Node / Web
+node_modules/
+package-lock.json
+screenshots/

@@ -1,6 +1,6 @@
 # あといくら
 
-日本の個人事業主・フリーランス向けiPhoneアプリ。
+日本の個人事業主・フリーランス向けの、**今年あといくら使えるかを概算するWebアプリ**。
 
 > 今年、あといくら使える？
 
@@ -8,140 +8,149 @@
 「今の状況なら実際にあといくら使っても大丈夫そうか」を直感的に把握できるようにする。
 確定申告書の作成や複式簿記の会計帳簿づくりを目的としたアプリではない。
 
-## App Store表示名（候補）
+## 公開URL
 
-あといくら - 個人事業主の税金・手取り予測
+<https://naoki213.github.io/atoikura/>
+
+- スマホのブラウザで開いて、そのまま使えます（インストール不要）
+- iPhoneでは Safari の共有メニューから「ホーム画面に追加」すると、アプリのように全画面で起動します
+- 入力したデータは**その端末のブラウザ内にだけ**保存され、どこにも送信されません
+
+テスト結果を見るページ: <https://naoki213.github.io/atoikura/tests/>
+
+## 画面
+
+| ホーム | 履歴 | 予測・設定 |
+|---|---|---|
+| 「今年あと使えるお金」を大きく表示し、内訳（売上・経費・予想利益・税金社会保険・確保資金）を開閉できる | 売上と経費を月別に一覧表示。すべて/売上/経費で切り替え、タップで編集・削除 | 自動予測と手動設定の切り替え、申告方法や社会保険などの詳細設定 |
 
 ## 技術構成
 
-- Swift / SwiftUI（iOS 17+）
-- SwiftData（永続化）
-- StoreKit 2（Pro課金。Ver1.0本体では未実装。「未実装機能 / Ver2予定」参照）
-- 外部ライブラリ: 使用しない（Apple標準技術のみ）
+- HTML / CSS / JavaScript のみ（**ビルド不要**、フレームワークなし、外部ライブラリなし）
+- 保存は `localStorage`（端末内のみ）
+- PWA対応（`manifest.webmanifest`、ホーム画面に追加可能）
+- 公開は GitHub Pages（リポジトリ直下の `index.html` がそのまま公開される）
 
-税計算ロジック（TaxEngine）はSwiftUI/SwiftData/UIKitに一切依存しない
-**独立したローカルSwift Package**として実装している。UI層から完全に分離し、
-将来的にmacOSやコマンドラインからも検証できる構造にしている。
+ビルド工程を挟まないので、リポジトリのファイル＝公開されるファイルです。
+「編集して push すればそのまま反映される」状態を保つことを優先しています。
+
+外部ライブラリを使っていないため、読み込みが速く、依存の更新作業も発生しません。
 
 ## フォルダ構成
 
 ```
 atoikura/
-  project.yml            # XcodeGenのプロジェクト定義（.xcodeprojはこれを元に生成する）
-  Atoikura/               # アプリ本体
-    App/                  # App/Sceneのエントリーポイント、ルート画面
-    Models/               # SwiftDataモデル（@Model）
-    Views/                # 画面（Onboarding/Home/History/Forecast/Settings/Shared）
-    ViewModels/            # 画面ごとの状態・振る舞い（ビジネスロジックはServices/TaxEngineへ委譲）
-    Services/              # 集計・予測・税計算結果の組み立てなど
-    Utilities/             # フォーマッタ等の小さな共通処理
-    Resources/             # Assets.xcassets 等
-  AtoikuraTests/          # アプリ側のユニットテスト（SwiftData・集計ロジックなど）
-  TaxEngine/              # 税計算ロジック本体（独立Swift Package）
-    Sources/TaxEngine/
-    Tests/TaxEngineTests/  # 境界値を中心としたユニットテスト
+  index.html                  公開されるアプリ本体（GitHub Pages のルート）
+  manifest.webmanifest        ホーム画面に追加したときの設定
+  assets/
+    css/style.css             見た目（ライト/ダーク対応）
+    icons/                    アプリアイコン
+    js/
+      format.js               金額・日付の表示フォーマット
+      store.js                localStorage への保存と取り出し
+      services.js             年間集計 → 年間予測 → 「あと使えるお金」の組み立て
+      app.js                  画面の組み立てと操作の受け口（タブ・イベント）
+      tax/
+        rules-2026.js         2026年分の税率・控除額（数値はここだけに書く）
+        engine.js             税計算エンジン（純粋な計算のみ）
+      views/
+        components.js         カード・行・入力欄などの共通パーツ
+        onboarding.js / home.js / history.js / entry.js / forecast.js / settings.js
+  tests/
+    index.html                ブラウザで開くだけでテストが走るページ
+    harness.js                最小限のテストハーネス
+    tax-tests.js              税計算の境界値テスト
+    services-tests.js         集計・予測・あと使えるお金のテスト
+  tools/
+    run-tests.cjs             Node.js でテストを実行（CI用）
+    screenshots.cjs           ブラウザで実際に操作して確認 + スクリーンショット撮影
+    make-icons.cjs            アプリアイコンのPNGを生成
 ```
 
-Viewには表示ロジックのみを置き、税額計算・年間集計などのビジネスロジックは
-`Services/` と `TaxEngine` に置く方針を徹底している。
+計算（`tax/`, `services.js`）と画面（`views/`）を分けてあり、
+計算部分は DOM に一切触れないため、ブラウザ無しでもテストできます。
 
-## データモデル
+## データの持ち方
 
-SwiftDataモデルは以下の6種類。「候補」として挙げられていた `AnnualForecast` は
-専用モデルにせず、年間予測の手動上書き値（`manualRevenueForecast` /
-`manualExpenseForecast`）として `TaxSettings` に統合した
-（年度ごとに1件ずつという性質が`TaxSettings`と同じで、モデルを増やすメリットが
-薄いと判断したため）。
+`localStorage` にひとつのJSONとして保存しています（キー: `atoikura.v1`）。
 
-| モデル | 役割 |
+| 項目 | 役割 |
 |---|---|
-| `UserProfile` | 表示名・事業開始年・申告方式（シングルトン） |
-| `IncomeTransaction` | 売上の1件の記録 |
-| `ExpenseTransaction` | 経費の1件の記録（カテゴリー・事業割合を含む） |
-| `TaxSettings` | 年度ごとの税計算用プロフィール（青色控除区分・扶養・国保手入力額・年間予測手動値など） |
-| `ReserveSettings` | 事業用に残したい予備資金・その他確保したい資金（シングルトン） |
-| `AppSettings` | オンボーディング完了フラグ・対象年度などアプリ全体の状態（シングルトン） |
+| `appSettings` | オンボーディング完了フラグ、対象年度 |
+| `profile` | 表示名・事業開始年・申告方法 |
+| `reserve` | 事業用に残したい予備資金・その他確保したい資金 |
+| `taxSettingsByYear` | 年度ごとの税計算用設定（青色控除区分・扶養・国保の手入力額・年間予測の手動値など） |
+| `incomes` / `expenses` | 売上・経費の記録 |
 
-金額はすべて `Decimal` 型で保持し、浮動小数点誤差を避けている。
+金額はすべて**円単位の整数**で保持し、税率は basis point（1bp = 0.01%）の整数で扱っています。
+小数を経由しないため、浮動小数点の誤差が出ません。
 
-## TaxEngine概要
+日付は `'YYYY-MM-DD'` の文字列で保存し、年・月の判定は文字列の前方一致で行っています。
+`Date` とタイムゾーンを介さないので、端末の設定によって集計月がずれることがありません。
 
-`TaxEngine` は年度ごとの税制ルール（`TaxRuleSet`）を切り替え可能な構造にしている。
+## TaxEngine（税計算）の概要
 
 ```
-TaxEngine（Swift Package、Apple UIフレームワーク非依存）
-  TaxProfile               入力（事業所得・申告方式・扶養状況など）
-  TaxRuleSet（プロトコル）  年度ごとの税率・控除額テーブル
-  TaxRules2026              2026年分のルール実装
-  IncomeTaxCalculator        所得税（＋復興特別所得税）
-  ResidentTaxCalculator      住民税
-  NationalPensionCalculator  国民年金
-  NationalHealthInsuranceCalculator  国民健康保険（自治体差が大きいためユーザー手入力を反映するのみ）
-  BusinessTaxCalculator      個人事業税
-  TaxCalculationResult       課税所得・適用控除・適用税率・計算年度を含む結果
+tax/rules-2026.js   年度ごとの税率・控除額テーブル（マジックナンバーはここだけ）
+tax/engine.js       所得税（＋復興特別所得税）/ 住民税 / 国民年金 /
+                    国民健康保険（ユーザー入力を反映）/ 個人事業税
 ```
 
-（TaxEngineの計算本体はPhase4-6で実装。詳細な設計判断は `DEVELOPMENT.md` を参照。）
+計算結果には税額だけでなく、**課税所得・適用した控除・適用税率・使用したルールの年度**も含めており、
+あとから根拠を表示できる構造にしています。
 
-## 対応税制年度
+新しい年度に対応するときは `rules-2027.js` を追加して `ruleSetForYear` に登録します。
+
+### 対応税制年度
 
 - 2026年分（令和8年分）
 
-税率・控除額などの数値は原則として一次情報（国税庁等）を確認した上で実装するが、
-一部の項目はネットワーク制約により一次情報へ直接アクセスできず、複数の二次情報を
-突き合わせて実装した。**要検証項目は `DEVELOPMENT.md` の「税制データの検証状況」に
-一覧化しているので、App Store公開前に必ず国税庁等の一次情報で再確認すること。**
+税率・控除額は一次情報の確認を前提としていますが、**一部の項目は未検証のまま実装しています。**
+必ず `DEVELOPMENT.md` の「税制データの検証状況」を読んでから数値を信用してください。
+アプリ内でも「概算」であることを明示し、確定申告・税務判断は税理士等へ確認するよう案内しています。
 
-## 現在実装済み機能（Ver1.0 MVP）
-
-- オンボーディング（表示名・事業開始年 / 申告方法 / 年間見込み・予備資金 / 完了、
-  「あとで設定する」対応）
-- 4タブのメイン画面（ホーム/履歴/予測/設定）
-- ホーム画面: 「今年あと使えるお金」の大きな表示、「内訳を見る」（売上・経費・予想利益・
-  税金社会保険・確保資金）
-- 売上・経費の追加/編集/削除、履歴一覧（すべて/売上/経費、月別グループ、スワイプ削除、
-  タップで編集、削除時の確認ダイアログ）
-- 予測タブ: 実績ベースの自動予測と手動設定の切り替え
-- 設定タブ: プロフィール・対象年度・申告方法・青色申告特別控除・都道府県・生年・扶養・
-  配偶者・社会保険（国民年金/国民健康保険）・個人事業税の業種区分・予備資金の管理
-- TaxEngine本体（所得税・住民税・国民年金・国民健康保険・個人事業税の概算計算）、
-  境界値中心のユニットテスト
-- 年間集計・年間予測・「今年あと使えるお金」の計算ロジック（`Services/`配下）、ユニットテスト
-- 免責文言（概算であることの明示、確定申告・税務判断は税理士等へ確認するよう案内）
-
-## 未実装機能 / Ver2予定
-
-Ver1.0では以下は実装しない（コード上拡張しやすい構造にはするが、機能自体は作らない）。
-
-- StoreKit 2によるPro課金（無料/Pro区分の設計はDEVELOPMENT.mdに記載。実装は今後）
-- AIチャット、レシートOCR、銀行/クレジットカードAPI連携
-- 確定申告書作成・電子申告、請求書発行、売掛金の高度管理
-- チーム共有、Web版、Android版
-- 実際のアプリアイコン画像（`AppIcon.appiconset`はプレースホルダーのContents.jsonのみ。
-  公開前にデザインしたPNGを追加する必要がある）
-
-Ver2.0の主力機能候補: 「もしも」シミュレーション（支出・売上・控除変更前後の比較）。
-
-## ビルド方法
-
-このリポジトリはXcodeプロジェクトファイル（`.xcodeproj`）を直接コミットせず、
-[XcodeGen](https://github.com/yonaskolb/XcodeGen) の `project.yml` から生成する方針。
+## 動作確認
 
 ```sh
-brew install xcodegen
-cd atoikura
-xcodegen generate
-open Atoikura.xcodeproj
+# 税計算・集計のユニットテスト（45件）
+npm test
+
+# ブラウザ（Chromium）で実際に操作して確認し、スクリーンショットを撮る
+npm install          # 初回のみ（playwright）
+npx playwright install chromium
+npm run check
 ```
 
-TaxEngineだけを単体でビルド・テストする場合（Swiftツールチェーンがあれば
-Xcode不要でmacOS/Linuxどちらでも可能）:
+`npm run check` は「オンボーディング → 売上100万円を登録 → 経費30万円を登録 → ホームに反映 →
+履歴 → 予測の手動設定 → 設定変更 → 再読み込みしてもデータが残る」までを自動で操作し、
+数値が期待どおりでなければ失敗します。ダークモードと小さい画面の撮影も行います。
 
-```sh
-cd TaxEngine
-swift test
-```
+ブラウザだけで確認したい場合は `tests/index.html` を開いてください（結果が一覧表示されます）。
 
-> 開発時の注意: このプロジェクトの一部の開発ターンはXcode/Swiftツールチェーンの
-> 無いLinux環境で行われている。その場合コードは書けてもXcodeでの実機ビルド確認は
-> できないため、静的なコードレビューのみで進めた回がある。詳細は `DEVELOPMENT.md` を参照。
+## 公開の仕方
+
+このリポジトリの既定ブランチに push すると、GitHub Pages がそのまま公開します。
+`index.html` がリポジトリ直下にあるため、`README.md` ではなくアプリが表示されます。
+
+## iOS（Swift/SwiftUI）版について
+
+このリポジトリには、同じアプリを iOS ネイティブで実装したコードも残してあります
+（`Atoikura/`, `AtoikuraTests/`, `TaxEngine/`, `project.yml`）。
+ビルド・テストは GitHub Actions の macOS ランナーで通ることを確認済みです。
+
+ただし iOS 版は Xcode（Mac）が無いと動かせず、手元で動かしながら開発するのが難しいため、
+**現在の主開発対象は Web 版**です。iOS版の詳細は `DEVELOPMENT.md` を参照してください。
+
+## 未実装 / 今後
+
+- 「もしも」シミュレーション（例: 30万円のPCを買ったら、あと使えるお金がどう変わるか）
+- CSV書き出し、データのバックアップ・復元
+- 複数年度のデータ比較
+- Pro課金（Web版では決済手段の検討が必要）
+- レシートOCR、銀行API連携、確定申告書の作成（Ver1.0では対象外）
+
+## プライバシー
+
+- 入力データは端末内の `localStorage` にのみ保存し、サーバーへ送信しません
+- アクセス解析・広告・外部SDKは一切使用していません
+- 外部への通信が無いため、オフラインでも動作します（初回読み込み後）

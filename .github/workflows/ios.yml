@@ -1,0 +1,75 @@
+name: iOS
+
+# iOS（Swift/SwiftUI）版の検証。
+# macOSランナーは実行コストが高いため、iOS関連のファイルが変更されたときだけ動かす。
+
+on:
+  push:
+    branches:
+      - main
+      - 'claude/**'
+    paths:
+      - 'Atoikura/**'
+      - 'AtoikuraTests/**'
+      - 'TaxEngine/**'
+      - 'project.yml'
+      - '.github/workflows/ios.yml'
+  pull_request:
+    paths:
+      - 'Atoikura/**'
+      - 'AtoikuraTests/**'
+      - 'TaxEngine/**'
+      - 'project.yml'
+      - '.github/workflows/ios.yml'
+  workflow_dispatch:
+
+jobs:
+  taxengine-tests:
+    name: TaxEngine unit tests (swift test)
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: swift test
+        working-directory: TaxEngine
+        run: swift test
+
+  build-and-test-app:
+    name: Build & test the iOS app (XcodeGen + xcodebuild)
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Determine simulator destination
+        id: sim
+        run: |
+          DEVICE=$(xcrun simctl list devices available -j \
+            | jq -r '.devices | to_entries[] | select(.key | contains("iOS")) | .value[] | select(.name | contains("iPhone")) | .name' \
+            | tail -n 1)
+          echo "Selected simulator: $DEVICE"
+          echo "device=$DEVICE" >> "$GITHUB_OUTPUT"
+
+      - name: Build (Debug, iOS Simulator)
+        run: |
+          xcodebuild build \
+            -project Atoikura.xcodeproj \
+            -scheme Atoikura \
+            -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.device }}" \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Run AtoikuraTests
+        run: |
+          xcodebuild test \
+            -project Atoikura.xcodeproj \
+            -scheme Atoikura \
+            -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.device }}" \
+            CODE_SIGNING_ALLOWED=NO
